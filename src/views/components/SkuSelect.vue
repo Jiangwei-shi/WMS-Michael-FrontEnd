@@ -152,7 +152,8 @@ const getList = () => {
   }).then(() => toggleSelection()).finally(() => loading.value = false);
 }
 const goCreateItem = () => {
-  const data = proxy.$router.resolve({path: '/system/itemManage2', query: {openDrawer: true}})
+  // 跳转到商品管理页面，并自动打开“新增商品”抽屉
+  const data = router.resolve({ path: '/basic/item', query: { openDrawer: true } })
   window.open(data.href, '_blank')
 }
 // 定义props

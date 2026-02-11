@@ -10,7 +10,7 @@ export default {
     langSwitchLabelEn: 'EN',
   },
   login: {
-    title: 'ruoyi-wms后台管理系统',
+    title: 'Michael-库存管理系统',
     usernamePlaceholder: '账号',
     passwordPlaceholder: '密码',
     codePlaceholder: '验证码',

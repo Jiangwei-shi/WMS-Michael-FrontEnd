@@ -10,7 +10,7 @@ export default {
     langSwitchLabelEn: 'EN',
   },
   login: {
-    title: 'ruoyi-wms Admin System',
+    title: 'Michael warehouse management System',
     usernamePlaceholder: 'Username',
     passwordPlaceholder: 'Password',
     codePlaceholder: 'Verification code',
