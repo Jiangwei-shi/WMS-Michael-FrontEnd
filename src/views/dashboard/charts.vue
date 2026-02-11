@@ -5,58 +5,62 @@
         <el-col :span="6">
           <div class="top-item-box item-box-one" style="display: flex;">
             <div style="flex:2;height:100%;">
-              <div>入库</div>
-              <div style="text-align:center;margin-top:30px;"><span style="font-size:26px;font-weight:bold;">33</span>
+              <div>{{ $t('home.inbound') }}</div>
+              <div style="text-align:center;margin-top:30px;">
+                <span style="font-size:26px;font-weight:bold;">33</span>
               </div>
             </div>
             <div style="flex:3;display: flex;flex-direction:column;justify-content:space-evenly">
-              <div>待入库：15</div>
-              <div>待质检：15</div>
-              <div>待上架：2</div>
-              <div>待完成：1 </div>
+              <div>{{ $t('home.inboundPendingInbound', { count: 15 }) }}</div>
+              <div>{{ $t('home.inboundPendingCheck', { count: 15 }) }}</div>
+              <div>{{ $t('home.inboundPendingOnShelf', { count: 2 }) }}</div>
+              <div>{{ $t('home.inboundPendingFinish', { count: 1 }) }}</div>
             </div>
           </div>
         </el-col>
         <el-col :span="6">
           <div class="top-item-box item-box-two" style="display: flex;">
             <div style="flex:2;height:100%;">
-              <div>出库</div>
-              <div style="text-align:center;margin-top:30px;"><span style="font-size:26px;font-weight:bold;"
-              >20</span></div>
+              <div>{{ $t('home.outbound') }}</div>
+              <div style="text-align:center;margin-top:30px;">
+                <span style="font-size:26px;font-weight:bold;">20</span>
+              </div>
             </div>
             <div style="flex:3;display: flex;flex-direction:column;justify-content:space-evenly">
-              <div>待配货：5</div>
-              <div>待波次：5</div>
-              <div>待拣货：5</div>
-              <div>待出库：5</div>
+              <div>{{ $t('home.outboundPendingAllocate', { count: 5 }) }}</div>
+              <div>{{ $t('home.outboundPendingWave', { count: 5 }) }}</div>
+              <div>{{ $t('home.outboundPendingPick', { count: 5 }) }}</div>
+              <div>{{ $t('home.outboundPendingOutbound', { count: 5 }) }}</div>
             </div>
           </div>
         </el-col>
         <el-col :span="6">
           <div class="top-item-box item-box-three" style="display: flex;">
             <div style="flex:2;height:100%;">
-              <div>其他</div>
-              <div style="text-align:center;margin-top:30px;"><span style="font-size:26px;font-weight:bold;"
-              >15</span></div>
+              <div>{{ $t('home.other') }}</div>
+              <div style="text-align:center;margin-top:30px;">
+                <span style="font-size:26px;font-weight:bold;">15</span>
+              </div>
             </div>
             <div style="flex:3;display: flex;flex-direction:column;justify-content:space-evenly">
-              <div>待截单：5</div>
-              <div>异常单：5</div>
-              <div>今日到货：5</div>
+              <div>{{ $t('home.otherPendingCutoff', { count: 5 }) }}</div>
+              <div>{{ $t('home.otherExceptionOrder', { count: 5 }) }}</div>
+              <div>{{ $t('home.otherTodayArrive', { count: 5 }) }}</div>
             </div>
           </div>
         </el-col>
         <el-col :span="6">
           <div class="top-item-box item-box-four" style="display: flex;">
             <div style="flex:2;height:100%;">
-              <div>库存预警</div>
-              <div style="text-align:center;margin-top:30px;"><span style="font-size:26px;font-weight:bold;">5</span>
+              <div>{{ $t('home.stockWarning') }}</div>
+              <div style="text-align:center;margin-top:30px;">
+                <span style="font-size:26px;font-weight:bold;">5</span>
               </div>
             </div>
             <div style="flex:3;display: flex;flex-direction:column;justify-content:space-evenly">
-              <div>松陵仓：1</div>
-              <div>盛泽仓：2</div>
-              <div>园区仓：2</div>
+              <div>{{ $t('home.stockWarehouseItem', { name: '松陵仓', count: 1 }) }}</div>
+              <div>{{ $t('home.stockWarehouseItem', { name: '盛泽仓', count: 2 }) }}</div>
+              <div>{{ $t('home.stockWarehouseItem', { name: '园区仓', count: 2 }) }}</div>
             </div>
           </div>
         </el-col>
@@ -66,7 +70,7 @@
       <el-row :gutter="12">
         <el-col :span="6">
           <el-card class="box-card" shadow="never">
-            <div class="card-title">仓库货物占比</div>
+            <div class="card-title">{{ $t('home.warehouseGoodsRatio') }}</div>
             <div style="height: calc(100% - 30px);">
               <StationPie height="100%"></StationPie>
               <div></div>
@@ -76,11 +80,11 @@
         <el-col :span="18">
           <el-card class="box-card" shadow="never">
             <div style="display:flex;justify-content: space-between;align-items: center;">
-              <div class="card-title">生产入库趋势</div>
+              <div class="card-title">{{ $t('home.inboundTrend') }}</div>
               <el-radio-group v-model="tabPosition" @change="dateChange">
                 <!-- <el-radio-button label="day">当日</el-radio-button> -->
-                <el-radio-button label="month">本月</el-radio-button>
-                <el-radio-button label="year">今年</el-radio-button>
+                <el-radio-button label="month">{{ $t('home.thisMonth') }}</el-radio-button>
+                <el-radio-button label="year">{{ $t('home.thisYear') }}</el-radio-button>
               </el-radio-group>
             </div>
             <div style="height: calc(100% - 30px);">
@@ -94,36 +98,42 @@
       <el-row :gutter="12">
         <el-col :span="6">
           <el-card class="box-card" shadow="never">
-            <div class="card-title">近7日销售出库</div>
+            <div class="card-title">{{ $t('home.last7SaleOutbound') }}</div>
             <div style="height: calc(100% - 30px);">
-              <StationLine height="100%" itemColor="#ee4368" yName="件" :chartData="lineDataOne"/>
+              <StationLine height="100%" itemColor="#ee4368" :yName="$t('home.unitPiece')" :chartData="lineDataOne"/>
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
           <el-card class="box-card" shadow="never">
-            <div class="card-title">近7日领料出库</div>
+            <div class="card-title">{{ $t('home.last7PickOutbound') }}</div>
             <div style="height: calc(100% - 30px);">
-              <StationLine height="100%" :chartData="lineDataTwo" yName="件" itemColor="#5470c6"/>
+              <StationLine height="100%" :chartData="lineDataTwo" :yName="$t('home.unitPiece')" itemColor="#5470c6"/>
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
           <el-card class="box-card" shadow="never">
-            <div class="card-title">近7日移库</div>
+            <div class="card-title">{{ $t('home.last7Move') }}</div>
             <div style="height: calc(100% - 30px);">
-              <StationLine height="100%"  :chartData="lineDataThree" yName="件"
-                           itemColor="#c58bea"
+              <StationLine
+                height="100%"
+                :chartData="lineDataThree"
+                :yName="$t('home.unitPiece')"
+                itemColor="#c58bea"
               />
             </div>
           </el-card>
         </el-col>
         <el-col :span="6">
           <el-card class="box-card" shadow="never">
-            <div class="card-title">近7日退货入库</div>
+            <div class="card-title">{{ $t('home.last7ReturnInbound') }}</div>
             <div style="height: calc(100% - 30px);">
-              <StationLine height="100%" yName="件" :chartData="lineDataFour"
-                           itemColor="#c7a428"
+              <StationLine
+                height="100%"
+                :yName="$t('home.unitPiece')"
+                :chartData="lineDataFour"
+                itemColor="#c7a428"
               />
             </div>
           </el-card>
@@ -143,7 +153,7 @@ const tabPosition = ref('month')
 const barChartData = ref({
   yData: [79, 68, 56, 72, 51, 63, 67, 71, 58, 81, 64, 77, 56, 69]
 })
-const barXName = ref('日')
+const barXName = ref('home.unitDay')
 const lineDataOne = ref({
   yData: [79, 65, 21, 67, 21, 89, 56],
 })

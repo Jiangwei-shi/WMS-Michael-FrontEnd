@@ -5,7 +5,13 @@
     <top-nav id="topmenu-container" class="topmenu-container" v-if="settingsStore.topNav" />
 
     <div class="right-menu">
-      
+      <el-button
+        class="right-menu-item hover-effect"
+        text
+        @click="toggleLanguage"
+      >
+        {{ currentLanguage === 'en' ? $t('navbar.langSwitchLabelZh') : $t('navbar.langSwitchLabelEn') }}
+      </el-button>
       <div class="avatar-container">
         <el-dropdown @command="handleCommand" class="right-menu-item hover-effect" trigger="click">
           <div class="avatar-wrapper">
@@ -29,6 +35,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import Breadcrumb from '@/components/Breadcrumb'
 import TopNav from '@/components/TopNav'
@@ -41,10 +48,14 @@ import RuoYiDoc from '@/components/RuoYi/Doc'
 import useAppStore from '@/store/modules/app'
 import useUserStore from '@/store/modules/user'
 import useSettingsStore from '@/store/modules/settings'
+import { useI18n } from 'vue-i18n'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
+const { locale, t } = useI18n()
+
+const currentLanguage = computed(() => settingsStore.language || 'zh-cn')
 
 function toggleSideBar() {
   appStore.toggleSideBar()
@@ -64,15 +75,21 @@ function handleCommand(command) {
 }
 
 function logout() {
-  ElMessageBox.confirm('确定注销并退出系统吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
+  ElMessageBox.confirm(t('navbar.logoutConfirmContent'), t('navbar.logoutConfirmTitle'), {
+    confirmButtonText: t('navbar.logoutConfirmOk'),
+    cancelButtonText: t('navbar.logoutConfirmCancel'),
     type: 'warning'
   }).then(() => {
     userStore.logOut().then(() => {
       location.href = import.meta.env.VITE_APP_CONTEXT_PATH + 'index';
     })
   }).catch(() => { });
+}
+
+function toggleLanguage() {
+  const next = currentLanguage.value === 'en' ? 'zh-cn' : 'en'
+  settingsStore.setLanguage(next)
+  locale.value = next
 }
 
 const emits = defineEmits(['setLayout'])
