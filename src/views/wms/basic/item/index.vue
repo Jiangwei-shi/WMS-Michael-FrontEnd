@@ -187,6 +187,19 @@
                 </el-form-item>
               </el-col>
             </el-row>
+            <!-- 这里是用于添加图片的功能 -->
+            <el-row :gutter="24">
+              <el-col :span="24">
+                <el-form-item label="商品图片" prop="ossIds">
+                  <ImageUpload
+                    v-model="form.ossIds"
+                    :limit="8"
+                    :file-size="20"
+                    :is-show-tip="true"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
           </el-form>
         </el-card>
         <el-card class="mt20">
@@ -408,6 +421,8 @@ const initFormData = {
   unit: undefined,
   itemBrand: undefined,
   remark: undefined,
+<!-- 这里是用于添加图片的功能 -->
+  ossIds: undefined,
 }
 const initCategoryFormData = {
   id: undefined,
