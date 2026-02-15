@@ -421,7 +421,6 @@ const initFormData = {
   unit: undefined,
   itemBrand: undefined,
   remark: undefined,
-<!-- 这里是用于添加图片的功能 -->
   ossIds: undefined,
 }
 const initCategoryFormData = {
