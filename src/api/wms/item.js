@@ -81,3 +81,36 @@ export function delItem(id) {
     method: 'delete'
   });
 };
+
+/**
+ * 上传商品图片（方案B：按商品维度上传）
+ * @param itemId 商品ID
+ * @param file 图片文件
+ * @param isMain 是否主图
+ * @param sort 排序
+ */
+export function uploadItemImage(itemId, file, isMain, sort) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const params = {};
+  if (isMain != null) params.isMain = isMain;
+  if (sort != null) params.sort = sort;
+  return request({
+    url: `/wms/item/${itemId}/image/upload`,
+    method: 'post',
+    data: formData,
+    params,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+}
+
+/**
+ * 删除商品图片
+ * @param imageId 图片ID
+ */
+export function deleteItemImage(imageId) {
+  return request({
+    url: `/wms/item/image/${imageId}`,
+    method: 'delete'
+  });
+}

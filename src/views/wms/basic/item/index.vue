@@ -187,16 +187,44 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <!-- 这里是用于添加图片的功能 -->
+            <!-- 商品图片：方案B，使用 /item/{itemId}/image/upload 接口 -->
             <el-row :gutter="24">
               <el-col :span="24">
-                <el-form-item label="商品图片" prop="ossIds">
-                  <ImageUpload
-                    v-model="form.ossIds"
-                    :limit="8"
-                    :file-size="20"
-                    :is-show-tip="true"
-                  />
+                <el-form-item label="商品图片" prop="imageList">
+                  <div class="item-image-upload">
+                    <!-- 已上传图片列表（编辑时来自接口，新增时为空） -->
+                    <div class="image-list" v-if="form.id && form.imageList && form.imageList.length">
+                      <div class="image-item" v-for="(img, idx) in form.imageList" :key="img.id || idx">
+                        <el-image :src="img.url" fit="cover" class="thumb" />
+                        <span v-if="img.isMain" class="main-tag">主图</span>
+                        <el-button type="danger" link class="btn-remove" icon="Delete" @click="removeItemImage(idx)" />
+                      </div>
+                    </div>
+                    <!-- 新增时待上传的图片预览 -->
+                    <div class="image-list" v-if="!form.id && pendingImageFiles.length">
+                      <div class="image-item" v-for="(item, idx) in pendingImageFiles" :key="idx">
+                        <el-image :src="item.url" fit="cover" class="thumb" />
+                        <el-button type="danger" link class="btn-remove" icon="Delete" @click="removePendingImage(idx)" />
+                      </div>
+                    </div>
+                    <el-upload
+                      ref="itemImageUploadRef"
+                      v-show="(form.id ? (form.imageList?.length || 0) : pendingImageFiles.length) < 8"
+                      class="upload-inline"
+                      list-type="picture-card"
+                      :auto-upload="!!form.id"
+                      :limit="8"
+                      :on-exceed="handleImageExceed"
+                      :before-upload="(file) => beforeImageUpload(file)"
+                      :http-request="form.id ? customUpload : undefined"
+                      :on-change="!form.id ? onPendingImageChange : undefined"
+                      :show-file-list="false"
+                      accept="image/*"
+                    >
+                      <el-icon class="avatar-uploader-icon"><Plus /></el-icon>
+                    </el-upload>
+                  </div>
+                  <div class="el-upload__tip" v-if="true">请上传大小不超过 20MB 的图片，格式 png/jpg/jpeg，最多 8 张</div>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -335,9 +363,10 @@
 </template>
 
 <script setup name="Item">
-import {getItem, delItem, addItem, updateItem} from '@/api/wms/item';
-import {computed, getCurrentInstance, nextTick, onMounted, reactive, ref, toRefs} from 'vue';
-import {ElForm, ElTree, ElTreeSelect} from 'element-plus';
+import { getItem, delItem, addItem, updateItem, uploadItemImage, deleteItemImage } from '@/api/wms/item';
+import { computed, getCurrentInstance, nextTick, onMounted, reactive, ref, toRefs } from 'vue';
+import { ElForm, ElTree, ElTreeSelect } from 'element-plus';
+import { Plus, Delete } from '@element-plus/icons-vue';
 import {
   updateItemCategory,
   addItemCategory,
@@ -421,7 +450,7 @@ const initFormData = {
   unit: undefined,
   itemBrand: undefined,
   remark: undefined,
-  ossIds: undefined,
+  imageList: [], // 商品图片列表（编辑时由接口返回，项为 { id, url, isMain, sort }）
 }
 const initCategoryFormData = {
   id: undefined,
@@ -514,8 +543,94 @@ const skuForm = reactive({
   itemSkuList: []
 })
 const skuFormRef = ref(ElForm)
+const itemImageUploadRef = ref(null)
 const skuRules = {
   skuName: [{required: true, message: '规格名称不能为空', trigger: 'blur'}]
+}
+
+// 商品图片（方案B）：新增时暂存的待上传文件 { file, url }
+const pendingImageFiles = ref([])
+const IMAGE_LIMIT = 8
+const IMAGE_SIZE_MB = 20
+
+function beforeImageUpload(file) {
+  const isImage = /^image\/(jpeg|jpg|png|gif|webp)/i.test(file.type)
+  if (!isImage) {
+    proxy?.$modal.msgError('只能上传 jpg/jpeg/png/gif/webp 格式图片')
+    return false
+  }
+  const isLt = file.size / 1024 / 1024 < IMAGE_SIZE_MB
+  if (!isLt) {
+    proxy?.$modal.msgError(`图片大小不能超过 ${IMAGE_SIZE_MB}MB`)
+    return false
+  }
+  return true
+}
+
+function handleImageExceed() {
+  proxy?.$modal.msgError(`最多上传 ${IMAGE_LIMIT} 张图片`)
+}
+
+/** 编辑时：自定义上传，走 /item/{itemId}/image/upload */
+async function customUpload(options) {
+  const { file } = options
+  if (!beforeImageUpload(file)) return
+  if (!form.value.id) return
+  proxy?.$modal.loading('正在上传图片…')
+  try {
+    const sort = (form.value.imageList?.length ?? 0)
+    const res = await uploadItemImage(form.value.id, file, !(form.value.imageList?.length), sort)
+    proxy?.$modal.closeLoading()
+    if (res.code === 200 && res.data) {
+      if (!Array.isArray(form.value.imageList)) form.value.imageList = []
+      form.value.imageList.push(res.data)
+      proxy?.$modal.msgSuccess('上传成功')
+      nextTick(() => itemImageUploadRef.value?.clearFiles?.())
+    } else {
+      proxy?.$modal.msgError(res.msg || '上传失败')
+    }
+  } catch (e) {
+    proxy?.$modal.closeLoading()
+    proxy?.$modal.msgError('上传失败')
+  }
+}
+
+/** 新增时：选择文件仅加入待上传列表，不发请求 */
+function onPendingImageChange(uploadFile) {
+  const file = uploadFile.raw
+  if (!file || !beforeImageUpload(file)) return
+  if (pendingImageFiles.value.length >= IMAGE_LIMIT) {
+    handleImageExceed()
+    return
+  }
+  const url = URL.createObjectURL(file)
+  pendingImageFiles.value.push({ file, url })
+}
+
+function removePendingImage(index) {
+  const item = pendingImageFiles.value[index]
+  if (item?.url) URL.revokeObjectURL(item.url)
+  pendingImageFiles.value.splice(index, 1)
+}
+
+/** 删除已上传的商品图片：调用后端删除接口并从列表中移除 */
+async function removeItemImage(index) {
+  const list = form.value.imageList
+  if (!list || !list[index]) return
+  const img = list[index]
+  const imageId = img.id
+  if (imageId == null) {
+    list.splice(index, 1)
+    return
+  }
+  await proxy?.$modal.confirm('确认删除该图片吗？')
+  try {
+    await deleteItemImage(imageId)
+    list.splice(index, 1)
+    proxy?.$modal.msgSuccess('删除成功')
+  } catch (e) {
+    proxy?.$modal.msgError(e?.message || '删除失败')
+  }
 }
 // sku 管理
 const resetItemSkuList = () => {
@@ -589,8 +704,13 @@ const cancelType = () => {
 }
 /** 表单重置 */
 const reset = () => {
+  pendingImageFiles.value.forEach((item) => {
+    if (item?.url) URL.revokeObjectURL(item.url)
+  })
+  pendingImageFiles.value = []
+  itemImageUploadRef.value?.clearFiles?.()
   form.value = {...initFormData};
-  itemFormRef.value.resetFields();
+  itemFormRef.value?.resetFields();
 }
 
 /** 表单重置 */
@@ -635,10 +755,14 @@ const handleUpdate = (row) => {
   nextTick(async () => {
     reset();
     const _id = row?.itemId || ids.value[0]
-    const res = await listItemSku({'itemId':_id});
-    Object.assign(skuForm.itemSkuList, res.data)
+    const [skuRes, itemRes] = await Promise.all([
+      listItemSku({ itemId: _id }),
+      getItem(_id)
+    ])
+    Object.assign(skuForm.itemSkuList, skuRes.data)
+    const itemData = itemRes.data || {}
+    form.value = { ...form.value, ...row.item, ...itemData, imageList: itemData.imageList || itemData.images || [] }
     skuLoading.value = false
-    Object.assign(form.value, row.item);
   });
 }
 const handleQueryType = (node, data) => {
@@ -670,14 +794,29 @@ const submitForm = () => {
       })
       if (flag) {
         buttonLoading.value = true;
-        if (form.value.id) {
-          await updateItem(form.value).finally(() => buttonLoading.value = false);
-        } else {
-          await addItem(form.value).finally(() => buttonLoading.value = false);
+        try {
+          if (form.value.id) {
+            await updateItem(form.value);
+          } else {
+            const payload = { ...form.value };
+            delete payload.imageList;
+            const res = await addItem(payload);
+            const newItemId = res?.data?.id ?? res?.data;
+            if (newItemId && pendingImageFiles.value.length) {
+              proxy?.$modal.loading('正在上传商品图片…');
+              for (let i = 0; i < pendingImageFiles.value.length; i++) {
+                const { file } = pendingImageFiles.value[i];
+                await uploadItemImage(newItemId, file, i === 0, i);
+              }
+              proxy?.$modal.closeLoading();
+            }
+          }
+          proxy?.$modal.msgSuccess('修改成功');
+          dialog.visible = false;
+          await getList();
+        } finally {
+          buttonLoading.value = false;
         }
-        proxy?.$modal.msgSuccess("修改成功");
-        dialog.visible = false;
-        await getList();
       }
     }
   });
@@ -782,6 +921,57 @@ onMounted(() => {
 
 .el-table__empty-text {
   width: 100%;
+}
+
+.item-image-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.item-image-upload .image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.item-image-upload .image-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.item-image-upload .image-item .thumb {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.item-image-upload .image-item .main-tag {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(64, 158, 255, 0.9);
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  padding: 2px 0;
+}
+.item-image-upload .image-item .btn-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 2px;
+  min-height: 0;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border-radius: 4px;
+}
+.item-image-upload .upload-inline :deep(.el-upload--picture-card) {
+  width: 100px;
+  height: 100px;
+  line-height: 100px;
 }
 
 </style>
