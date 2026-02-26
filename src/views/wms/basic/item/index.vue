@@ -778,48 +778,70 @@ const handleQueryType = (node, data) => {
   }
 }
 /** 提交按钮 */
-const submitForm = () => {
-  form.value.sku = skuForm.itemSkuList
-  itemFormRef.value.validate(async (valid) => {
-    if (valid) {
-      let flag = true
-      if (!skuForm.itemSkuList || skuForm.itemSkuList.length === 0) {
-        proxy?.$modal.msgError("至少包含一个商品规格");
-        flag = false
-      }
-      await skuFormRef.value.validate((valid2) => {
-        if (!valid2) {
-          flag = false;
-        }
-      })
-      if (flag) {
-        buttonLoading.value = true;
-        try {
-          if (form.value.id) {
-            await updateItem(form.value);
-          } else {
-            const payload = { ...form.value };
-            delete payload.imageList;
-            const res = await addItem(payload);
-            const newItemId = res?.data?.id ?? res?.data;
-            if (newItemId && pendingImageFiles.value.length) {
-              proxy?.$modal.loading('正在上传商品图片…');
-              for (let i = 0; i < pendingImageFiles.value.length; i++) {
-                const { file } = pendingImageFiles.value[i];
-                await uploadItemImage(newItemId, file, i === 0, i);
-              }
-              proxy?.$modal.closeLoading();
-            }
-          }
-          proxy?.$modal.msgSuccess('修改成功');
-          dialog.visible = false;
-          await getList();
-        } finally {
-          buttonLoading.value = false;
-        }
+const submitForm = async () => {
+  // 将规格挂到 form 上，一起提交给后端
+  form.value.sku = skuForm.itemSkuList;
+
+  // 先校验商品主表
+  try {
+    await itemFormRef.value.validate();
+  } catch {
+    return;
+  }
+
+  // 再校验规格表
+  let flag = true;
+  if (!skuForm.itemSkuList || skuForm.itemSkuList.length === 0) {
+    proxy?.$modal.msgError("至少包含一个商品规格");
+    flag = false;
+  }
+  try {
+    await skuFormRef.value.validate();
+  } catch {
+    flag = false;
+  }
+  if (!flag) return;
+
+  buttonLoading.value = true;
+  try {
+    // 先保存商品，拿到 itemId（新增时后端返回 Long 类型 itemId）
+    let itemId = form.value.id;
+    if (itemId) {
+      await updateItem(form.value);
+    } else {
+      const payload = { ...form.value };
+      delete payload.imageList;
+      const res = await addItem(payload);
+      itemId = res?.data?.id ?? res?.data?.itemId ?? res?.data;
+      if (!itemId) {
+        throw new Error('新增商品返回的ID为空');
       }
     }
-  });
+
+    // 如果有待上传图片，则利用返回的 itemId 调用原有图片上传接口
+    if (itemId && pendingImageFiles.value.length) {
+      proxy?.$modal.loading('正在上传商品图片…');
+      try {
+        for (let i = 0; i < pendingImageFiles.value.length; i++) {
+          const { file } = pendingImageFiles.value[i];
+          await uploadItemImage(itemId, file, i === 0, i);
+        }
+      } catch (e) {
+        proxy?.$modal.msgWarning('商品已保存，但部分图片上传失败，可在修改中重新上传');
+      } finally {
+        proxy?.$modal.closeLoading();
+      }
+    }
+
+    proxy?.$modal.msgSuccess('修改成功');
+    dialog.visible = false;
+    pendingImageFiles.value = [];
+    await getList();
+  } catch (err) {
+    proxy?.$modal.msgError(err?.message || err?.msg || '操作失败');
+  } finally {
+    buttonLoading.value = false;
+  }
 }
 const submitCategoryForm = () => {
   itemCategoryFormRef.value.validate(async (valid) => {

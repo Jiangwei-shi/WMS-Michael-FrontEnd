@@ -5,6 +5,32 @@ import Layout from '@/layout/index'
 import ParentView from '@/components/ParentView'
 import InnerLink from '@/layout/components/InnerLink'
 
+// 需要在前端隐藏的菜单路由 path（可以写一级或子级）
+const HIDDEN_SIDEBAR_PATHS = [
+  // 'itemBrand',
+  // 'inventory',
+  // 'inventoryHistory',
+  // 'checkOrder',
+  // 'movementOrder',
+  // 'merchant',      
+  // '/system', 
+  // '/monitor',
+  // 'gen',
+  // '/log'
+]
+
+// 递归过滤 sidebar 路由
+function filterSidebarRoutes(routes) {
+  return routes
+    .filter(route => !HIDDEN_SIDEBAR_PATHS.includes(route.path))
+    .map(route => {
+      if (route.children && route.children.length) {
+        route.children = filterSidebarRoutes(route.children)
+      }
+      return route
+    })
+}
+
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob('./../../views/**/*.vue')
 
@@ -40,13 +66,17 @@ const usePermissionStore = defineStore(
             const rdata = JSON.parse(JSON.stringify(res.data))
             const defaultData = JSON.parse(JSON.stringify(res.data))
             const sidebarRoutes = filterAsyncRouter(sdata)
+            console.log('sidebarRoutes:', sidebarRoutes)
             const rewriteRoutes = filterAsyncRouter(rdata, false, true)
             const defaultRoutes = filterAsyncRouter(defaultData)
             const asyncRoutes = filterDynamicRoutes(dynamicRoutes)
             asyncRoutes.forEach(route => { router.addRoute(route) })
+            const filteredSidebarRoutes = filterSidebarRoutes(sidebarRoutes)
             this.setRoutes(rewriteRoutes)
-            this.setSidebarRouters(constantRoutes.concat(sidebarRoutes))
-            this.setDefaultRoutes(sidebarRoutes)
+            // this.setSidebarRouters(constantRoutes.concat(sidebarRoutes))
+            this.setSidebarRouters(constantRoutes.concat(filteredSidebarRoutes))
+            // this.setDefaultRoutes(sidebarRoutes)
+            this.setDefaultRoutes(filteredSidebarRoutes)
             this.setTopbarRoutes(defaultRoutes)
             resolve(rewriteRoutes)
           })
