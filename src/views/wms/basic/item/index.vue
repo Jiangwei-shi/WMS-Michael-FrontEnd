@@ -18,6 +18,88 @@
             ></el-option>
           </el-select>
         </el-form-item>
+        <!-- 成色（文本） -->
+        <el-form-item label="成色" prop="itemCondition">
+          <el-input
+            v-model="queryParams.itemCondition"
+            placeholder="请输入成色，如：全新、九成新"
+            clearable
+            @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+
+        <!-- 年份（数字输入） -->
+        <el-form-item label="年份" prop="year">
+          <el-input-number
+            v-model="queryParams.year"
+            :min="0"
+            :max="9999"
+            :controls="false"
+            style="width: 120px"
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+
+        <!-- 是否已护理（开关） -->
+        <el-form-item label="已护理" prop="cared">
+          <el-switch
+            v-model="queryParams.cared"
+            active-text="是"
+            inactive-text="否"
+            :active-value="true"
+            :inactive-value="false"
+          />
+        </el-form-item>
+
+        <!-- 默认数量（数字输入） -->
+        <el-form-item label="默认数量" prop="defaultQty">
+          <el-input-number
+            v-model="queryParams.defaultQty"
+            :min="0"
+            :controls="false"
+            style="width: 120px"
+            @keyup.enter.native="handleQuery"
+          />
+        </el-form-item>
+
+        <!-- 鉴定机构（文本） -->
+        <el-form-item label="鉴定机构" prop="authAgency">
+          <el-input
+            v-model="queryParams.authAgency"
+            placeholder="请输入鉴定机构"
+            clearable
+            @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+
+        <!-- 寄售信息（多行文本） -->
+        <el-form-item label="寄售信息" prop="consignInfo">
+          <el-input
+            v-model="queryParams.consignInfo"
+            type="textarea"
+            :rows="1"
+            placeholder="请输入寄售信息关键字"
+            @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+
+        <!-- 价格/成本价（文本） -->
+        <el-form-item label="价格" prop="priceText">
+          <el-input
+            v-model="queryParams.priceText"
+            placeholder="请输入价格相关文案"
+            clearable
+            @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="成本价" prop="costPriceText">
+          <el-input
+            v-model="queryParams.costPriceText"
+            placeholder="请输入成本价相关文案"
+            clearable
+            @keyup.enter="handleQuery"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
           <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -74,8 +156,21 @@
             <el-table-column label="商品信息" prop="itemId">
               <template #default="{ row }">
                 <div>{{ row.item.itemName + (row.item.itemCode ? ('(' +  row.item.itemCode + ')') : '') }}</div>
-                <div v-if="row.item.itemBrand">{{ row.item.itemBrand ? ('品牌：' + useWmsStore().itemBrandMap.get(row.item.itemBrand)?.brandName) : '' }}</div>
-                <div v-if="row.item.itemCategory">{{ row.item.itemCategory ? ('分类：' + useWmsStore().itemCategoryMap.get(row.item.itemCategory)?.categoryName) : '' }}</div>
+                <div v-if="row.item.itemBrand">
+                  {{ row.item.itemBrand ? ('品牌：' + useWmsStore().itemBrandMap.get(row.item.itemBrand)?.brandName) : '' }}
+                </div>
+                <div v-if="row.item.itemCategory">
+                  {{ row.item.itemCategory ? ('分类：' + useWmsStore().itemCategoryMap.get(row.item.itemCategory)?.categoryName) : '' }}
+                </div>
+                <div v-if="row.item.itemCondition">
+                  成色：{{ row.item.itemCondition }}
+                </div>
+                <div v-if="row.item.year || row.item.year === 0">
+                  年份：{{ row.item.year }}
+                </div>
+                <div v-if="row.item.cared !== null && row.item.cared !== undefined">
+                  护理：{{ row.item.cared ? '已护理' : '未护理' }}
+                </div>
               </template>
             </el-table-column>
             <el-table-column label="规格信息" prop="skuName" align="left">
@@ -184,6 +279,81 @@
                       :value="item.id"
                     ></el-option>
                   </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="成色" prop="itemCondition">
+                  <el-input v-model="form.itemCondition" placeholder="请输入成色（如：全新、九成新等）" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24">
+              <el-col :span="12">
+                <el-form-item label="年份">
+                  <el-input-number v-model="form.year" :min="0" :max="9999" :controls="false" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="是否已护理">
+                  <el-switch
+                    v-model="form.cared"
+                    active-text="已护理"
+                    inactive-text="未护理"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24">
+              <el-col :span="12">
+                <el-form-item label="默认数量">
+                  <el-input-number v-model="form.defaultQty" :min="0" :controls="false" style="width: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="鉴定机构">
+                  <el-input v-model="form.authAgency" placeholder="请输入鉴定机构名称" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24">
+              <el-col :span="24">
+                <el-form-item label="寄售信息">
+                  <el-input
+                    v-model="form.consignInfo"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="请输入寄售信息（如寄售渠道、周期、分成等）"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24">
+              <el-col :span="12">
+                <el-form-item label="建议价格">
+                  <el-input
+                    v-model="form.priceText"
+                    placeholder="请输入价格相关文案（如：到店议价、具体价格面议等）"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="成本价">
+                  <el-input
+                    v-model="form.costPriceText"
+                    placeholder="请输入成本价说明（如：含加工费、不含税等）"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24">
+              <el-col :span="24">
+                <el-form-item label="备注" prop="remark">
+                  <el-input
+                    v-model="form.remark"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="请输入备注信息"
+                  />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -449,7 +619,16 @@ const initFormData = {
   itemCategory: undefined,
   unit: undefined,
   itemBrand: undefined,
+  // 新增字段
   remark: undefined,
+  itemCondition: undefined,
+  year: undefined,
+  cared: false,
+  authAgency: undefined,
+  consignInfo: undefined,
+  defaultQty: undefined,
+  priceText: undefined,
+  costPriceText: undefined,
   imageList: [], // 商品图片列表（编辑时由接口返回，项为 { id, url, isMain, sort }）
 }
 const initCategoryFormData = {
@@ -467,6 +646,16 @@ const data = reactive({
     pageSize: 10,
     itemCode: undefined,
     itemName: undefined,
+    itemBrand: undefined,       // 品牌（数字）
+    itemCategory: undefined,    // 分类（数字）
+    itemCondition: undefined,   // 成色（文本）
+    year: undefined,            // 年份（数字）
+    cared: undefined,           // 是否已护理（布尔，用开关控制；重置时恢复 undefined 表示不过滤）
+    defaultQty: undefined,      // 默认数量（数字）
+    authAgency: undefined,      // 鉴定机构（文本）
+    consignInfo: undefined,     // 寄售信息（多行文本）
+    priceText: undefined,       // 价格文案（文本）
+    costPriceText: undefined,   // 成本价文案（文本）
     itemType: undefined
   },
   rules: {
